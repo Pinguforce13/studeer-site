@@ -824,7 +824,6 @@ body {
   </main>
 </div>
 
-<!-- MODALS -->
 <div class="modal-overlay hidden" id="flashcardModal">
   <div class="modal flashcard-modal">
     <div class="fc-progress" id="fcProgress">1 / 10</div>
@@ -1107,34 +1106,15 @@ function saveApiKey() {
 
 // ─── AI CALL ──────────────────────────────────────────────────
 async function callClaude(prompt, imageB64 = null) {
-  if (!apiKey) {
-    showApiModal();
-    throw new Error('Geen API sleutel');
-  }
-
   const content = [];
-  if (imageB64) {
-    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageB64 } });
-  }
+  if (imageB64) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageB64 } });
   content.push({ type: 'text', text: prompt });
-
   const res = await fetch('/api/chat', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content }]
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{ role: 'user', content }] })
   });
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error?.message || 'API fout');
-  }
-
+  if (!res.ok) { const err = await res.json(); throw new Error(err.error?.message || 'API fout'); }
   const data = await res.json();
   return data.content?.map(i => i.text || '').join('') || '';
 }
