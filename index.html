@@ -4,13 +4,703 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StudeerApp</title>
-  <meta name="description" content="Jouw persoonlijke AI studeer-assistent" />
   <meta name="theme-color" content="#1a0533" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+/* ─── RESET & BASE ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0022;
+  --bg2: #1a0533;
+  --bg3: #240a45;
+  --card: #1e0a38;
+  --card2: #2a1050;
+  --accent: #a855f7;
+  --accent2: #7c3aed;
+  --accent3: #c084fc;
+  --gold: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #f3e8ff;
+  --text2: #c4b5fd;
+  --text3: #8b7aa8;
+  --border: rgba(168,85,247,0.2);
+  --border2: rgba(168,85,247,0.4);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --font: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --sidebar-w: 260px;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── SCREENS ───────────────────────────────────────────── */
+.screen { min-height: 100vh; }
+.screen.hidden { display: none !important; }
+.screen.active { display: block; }
+
+/* ─── AUTH ──────────────────────────────────────────────── */
+#authScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, #3b0764 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, #1e1b4b 0%, transparent 50%),
+              radial-gradient(ellipse at 60% 80%, #2d1462 0%, transparent 50%),
+              #0a0015;
+  z-index: 0;
+}
+
+.auth-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem 1rem;
+}
+
+.logo-big { font-size: 3rem; margin-bottom: 0.5rem; }
+.brand { font-family: var(--font-display); font-size: 2.5rem; color: var(--text); margin-bottom: 0.25rem; }
+.brand-sub { color: var(--text2); font-size: 0.95rem; margin-bottom: 2rem; }
+
+.auth-card {
+  background: rgba(36,10,69,0.8);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  text-align: left;
+}
+.auth-card h2 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 1.25rem; color: var(--text); }
+.auth-card input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.auth-card input:focus { border-color: var(--accent); }
+.auth-card input::placeholder { color: var(--text3); }
+
+.switch-auth { color: var(--text3); font-size: 0.85rem; margin-top: 1rem; text-align: center; }
+.switch-auth a { color: var(--accent3); cursor: pointer; text-decoration: underline; }
+.auth-error { color: var(--red); font-size: 0.85rem; margin-top: 0.75rem; padding: 0.5rem; background: rgba(239,68,68,0.1); border-radius: var(--radius-sm); }
+.hidden { display: none !important; }
+
+/* ─── APP LAYOUT ─────────────────────────────────────────── */
+#appScreen { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed;
+  left: -100%;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  transition: left 0.3s cubic-bezier(.4,0,.2,1);
+}
+.sidebar.open { left: 0; }
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.logo-small { font-size: 1.4rem; }
+.app-name { font-family: var(--font-display); font-size: 1.2rem; flex: 1; }
+.close-sidebar { background: none; border: none; color: var(--text3); font-size: 1.1rem; cursor: pointer; padding: 0.25rem; }
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent2);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.user-name { font-weight: 500; font-size: 0.9rem; }
+.user-email { color: var(--text3); font-size: 0.75rem; margin-top: 2px; }
+
+.nav-section { padding: 1rem; flex: 1; }
+.nav-label { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text2);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 2px;
+}
+.nav-btn:hover { background: rgba(168,85,247,0.1); color: var(--text); }
+.nav-btn.active { background: rgba(168,85,247,0.2); color: var(--accent3); font-weight: 500; }
+.nav-btn.logout { color: var(--red); margin-top: 0.5rem; }
+.nav-btn.logout:hover { background: rgba(239,68,68,0.1); }
+
+.sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
+
+/* TOPBAR */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(26,5,51,0.9);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.menu-btn { background: none; border: none; color: var(--text2); font-size: 1.3rem; cursor: pointer; padding: 0.25rem; }
+.page-title { font-family: var(--font-display); font-size: 1.15rem; flex: 1; }
+.api-badge {
+  background: rgba(168,85,247,0.15);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.api-badge:hover { background: rgba(168,85,247,0.25); }
+
+/* PAGES */
+.page { padding: 1.25rem; max-width: 680px; margin: 0 auto; width: 100%; }
+.page.hidden { display: none; }
+.page.active { display: block; }
+
+/* ─── STUDY PAGE ─────────────────────────────────────────── */
+.upload-section { margin-bottom: 1rem; }
+
+.upload-zone {
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(168,85,247,0.04);
+  transition: background 0.15s, border-color 0.15s;
+}
+.upload-zone:hover { background: rgba(168,85,247,0.1); border-color: var(--accent); }
+.upload-zone.dragover { background: rgba(168,85,247,0.15); border-color: var(--accent); }
+.upload-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.upload-zone p { color: var(--text); font-weight: 500; }
+.upload-zone .sub { color: var(--text3); font-size: 0.85rem; margin-top: 0.25rem; font-weight: 400; }
+.upload-zone input[type="file"] { display: none; }
+
+.preview-img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-top: 0.75rem;
+}
+.change-photo {
+  display: block;
+  margin: 0.5rem auto 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.35rem 0.9rem;
+  color: var(--text3);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.change-photo:hover { color: var(--text); border-color: var(--accent); }
+
+.subject-row { margin-bottom: 1rem; }
+.subject-row input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.subject-row input:focus { border-color: var(--accent); }
+.subject-row input::placeholder { color: var(--text3); }
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 480px) { .mode-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.mode-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  font-family: var(--font);
+  color: var(--text2);
+}
+.mode-card:hover { background: var(--card2); border-color: var(--accent); }
+.mode-card.active {
+  background: rgba(168,85,247,0.18);
+  border: 2px solid var(--accent);
+  color: var(--accent3);
+}
+.mode-icon { font-size: 1.5rem; margin-bottom: 0.35rem; }
+.mode-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 2px; }
+.mode-desc { font-size: 0.72rem; opacity: 0.75; }
+
+/* TOETS OPTIONS */
+.toets-options {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.toets-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.toets-type {
+  flex: 1;
+  padding: 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toets-type.active { background: var(--accent2); border-color: var(--accent); color: white; font-weight: 500; }
+.time-picker label { font-size: 0.85rem; color: var(--text2); display: block; margin-bottom: 0.5rem; }
+.time-picker input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+/* ANALYZE BTN */
+.analyze-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.02em;
+}
+.analyze-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.analyze-btn:active { transform: translateY(0); }
+.analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* RESULT */
+.result-area {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.result-header h3 { font-family: var(--font-display); font-size: 1.15rem; }
+.save-btn {
+  background: rgba(16,185,129,0.15);
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 20px;
+  padding: 0.3rem 0.75rem;
+  color: var(--green);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.save-btn:hover { background: rgba(16,185,129,0.25); }
+
+.result-text { font-size: 0.9rem; line-height: 1.75; color: var(--text2); white-space: pre-wrap; }
+
+.loading-box { display: flex; align-items: center; gap: 0.75rem; color: var(--text3); font-size: 0.9rem; }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.video-list { margin-top: 0.5rem; }
+.video-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.video-item:last-child { border-bottom: none; }
+.video-num {
+  min-width: 26px; height: 26px;
+  background: rgba(168,85,247,0.2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent3);
+}
+.video-term { font-size: 0.9rem; font-weight: 500; }
+.video-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--accent3);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.video-link:hover { color: var(--accent); }
+
+/* QUIZ STYLES */
+.quiz-question { margin-bottom: 1.25rem; }
+.quiz-q-text { font-size: 1rem; font-weight: 500; margin-bottom: 0.75rem; line-height: 1.5; }
+.quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+.quiz-option {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text2);
+  text-align: left;
+  transition: all 0.15s;
+}
+.quiz-option:hover { border-color: var(--accent); color: var(--text); }
+.quiz-option.correct { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.quiz-option.wrong { background: rgba(239,68,68,0.1); border-color: var(--red); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; }
+.quiz-feedback { margin-top: 0.75rem; font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); }
+.quiz-feedback.correct { background: rgba(16,185,129,0.1); color: var(--green); }
+.quiz-feedback.wrong { background: rgba(239,68,68,0.08); color: var(--red); }
+.quiz-score { text-align: center; padding: 1rem; }
+.quiz-score .score-num { font-family: var(--font-display); font-size: 2.5rem; color: var(--accent3); }
+.quiz-next {
+  width: 100%;
+  padding: 0.65rem;
+  margin-top: 1rem;
+  background: rgba(168,85,247,0.15);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--accent3);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.quiz-next:hover { background: rgba(168,85,247,0.25); }
+
+/* ─── HISTORY PAGE ───────────────────────────────────────── */
+.history-header { margin-bottom: 1.25rem; }
+.history-header h2 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 0.25rem; }
+.history-header p { color: var(--text3); font-size: 0.85rem; }
+
+.session-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.session-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.session-card:hover { border-color: var(--accent); background: var(--card2); }
+.session-thumb {
+  width: 52px; height: 52px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg3);
+}
+.session-thumb-placeholder {
+  width: 52px; height: 52px;
+  border-radius: var(--radius-sm);
+  background: rgba(168,85,247,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.session-info { flex: 1; min-width: 0; }
+.session-title { font-weight: 500; font-size: 0.9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.session-meta { font-size: 0.78rem; color: var(--text3); }
+.session-mode-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  background: rgba(168,85,247,0.15);
+  color: var(--accent3);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+.empty-state div { margin-bottom: 0.75rem; }
+.empty-state p { font-size: 0.95rem; margin-bottom: 0.25rem; }
+.empty-state small { font-size: 0.8rem; }
+
+/* ─── MODALS ─────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal h3 { font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 0.5rem; }
+.modal p { color: var(--text3); font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.5; }
+.modal input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  outline: none;
+}
+.modal input:focus { border-color: var(--accent); }
+.modal-buttons { display: flex; gap: 0.75rem; }
+.api-link { font-size: 0.8rem; margin-top: 1rem; }
+.api-link a { color: var(--accent3); }
+
+.close-modal {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.35rem 0.85rem;
+  color: var(--text3);
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: all 0.15s;
+}
+.close-modal:hover { color: var(--text); border-color: var(--accent); }
+
+/* FLASHCARD MODAL */
+.flashcard-modal { max-width: 500px; }
+.fc-progress { text-align: center; color: var(--text3); font-size: 0.85rem; margin-bottom: 1rem; }
+.flashcard {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 2rem;
+  min-height: 160px;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+.flashcard:hover { background: rgba(168,85,247,0.15); }
+.fc-front { color: var(--text); font-weight: 500; }
+.fc-back { color: var(--accent3); }
+.fc-buttons { display: flex; gap: 0.6rem; margin-bottom: 0.75rem; }
+.btn-flip {
+  flex: 1;
+  padding: 0.65rem;
+  background: rgba(168,85,247,0.2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--accent3);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-flip:hover { background: rgba(168,85,247,0.3); }
+
+/* TOETS MODAL */
+.toets-modal { max-width: 540px; }
+.toets-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.timer { color: var(--gold); font-weight: 600; font-size: 1rem; }
+.timer.urgent { color: var(--red); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: 0.5; } }
+.toets-nav { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+.toets-answer {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  margin-top: 0.75rem;
+  min-height: 80px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+}
+.toets-answer:focus { border-color: var(--accent); }
+.toets-mc-option {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+  color: var(--text2);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 0.4rem;
+  transition: all 0.15s;
+}
+.toets-mc-option:hover { border-color: var(--accent); color: var(--text); }
+.toets-mc-option.selected { background: rgba(168,85,247,0.2); border-color: var(--accent); color: var(--accent3); }
+.toets-results { text-align: center; }
+.toets-results .big-score { font-family: var(--font-display); font-size: 3rem; color: var(--accent3); }
+
+/* SESSION DETAIL MODAL */
+.session-modal { max-width: 600px; }
+.session-detail-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+.session-detail-content { font-size: 0.9rem; line-height: 1.7; color: var(--text2); white-space: pre-wrap; }
+
+/* ─── BUTTONS ────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.5rem;
+  color: white;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  width: 100%;
+}
+.btn-primary:hover { opacity: 0.88; }
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1.25rem;
+  color: var(--text2);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex: 1;
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+
+/* ─── SCROLLBAR ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  </style>
 </head>
 <body>
 
@@ -42,8 +732,6 @@
 
 <!-- MAIN APP -->
 <div id="appScreen" class="screen hidden">
-
-  <!-- SIDEBAR -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <span class="logo-small">📖</span>
@@ -59,29 +747,21 @@
     </div>
     <div class="nav-section">
       <div class="nav-label">Menu</div>
-      <button class="nav-btn active" onclick="goTo('study')" data-page="study">
-        <span>🧠</span> Studeren
-      </button>
-      <button class="nav-btn" onclick="goTo('history')" data-page="history">
-        <span>📂</span> Mijn sessies
-      </button>
+      <button class="nav-btn active" onclick="goTo('study')" data-page="study"><span>🧠</span> Studeren</button>
+      <button class="nav-btn" onclick="goTo('history')" data-page="history"><span>📂</span> Mijn sessies</button>
     </div>
     <div class="sidebar-footer">
-      <button class="nav-btn logout" onclick="logout()">
-        <span>🚪</span> Uitloggen
-      </button>
+      <button class="nav-btn logout" onclick="logout()"><span>🚪</span> Uitloggen</button>
     </div>
   </nav>
   <div class="overlay hidden" id="overlay" onclick="toggleSidebar()"></div>
 
-  <!-- TOP BAR -->
   <header class="topbar">
     <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     <span class="page-title" id="pageTitle">Studeren</span>
     <div class="api-badge" id="apiStatus" onclick="showApiModal()">⚙️ API</div>
   </header>
 
-  <!-- PAGE: STUDY -->
   <main class="page active" id="page-study">
     <div class="upload-section">
       <div class="upload-zone" id="uploadZone">
@@ -93,44 +773,29 @@
       <img id="previewImg" class="preview-img hidden" alt="preview" />
       <button class="change-photo hidden" id="changePhoto" onclick="resetPhoto()">📷 Andere foto</button>
     </div>
-
     <div class="subject-row">
       <input type="text" id="subjectInput" placeholder="Vak (bijv. Biologie, Frans, Wiskunde...)" />
     </div>
-
     <div class="mode-grid">
       <button class="mode-card active" data-mode="uitgebreid" onclick="selectMode(this)">
-        <div class="mode-icon">📚</div>
-        <div class="mode-title">Uitgebreide uitleg</div>
-        <div class="mode-desc">Alles stap voor stap</div>
+        <div class="mode-icon">📚</div><div class="mode-title">Uitgebreide uitleg</div><div class="mode-desc">Alles stap voor stap</div>
       </button>
       <button class="mode-card" data-mode="efficient" onclick="selectMode(this)">
-        <div class="mode-icon">⚡</div>
-        <div class="mode-title">Efficiënte uitleg</div>
-        <div class="mode-desc">Enkel het essentiële</div>
+        <div class="mode-icon">⚡</div><div class="mode-title">Efficiënte uitleg</div><div class="mode-desc">Enkel het essentiële</div>
       </button>
       <button class="mode-card" data-mode="flashcards" onclick="selectMode(this)">
-        <div class="mode-icon">🃏</div>
-        <div class="mode-title">Flashcards</div>
-        <div class="mode-desc">Woordenschat & begrippen</div>
+        <div class="mode-icon">🃏</div><div class="mode-title">Flashcards</div><div class="mode-desc">Woordenschat & begrippen</div>
       </button>
       <button class="mode-card" data-mode="quiz" onclick="selectMode(this)">
-        <div class="mode-icon">✏️</div>
-        <div class="mode-title">Quiz</div>
-        <div class="mode-desc">Oefen voor je toets</div>
+        <div class="mode-icon">✏️</div><div class="mode-title">Quiz</div><div class="mode-desc">Oefen voor je toets</div>
       </button>
       <button class="mode-card" data-mode="toets" onclick="selectMode(this)">
-        <div class="mode-icon">📝</div>
-        <div class="mode-title">Toets</div>
-        <div class="mode-desc">Met of zonder tijd</div>
+        <div class="mode-icon">📝</div><div class="mode-title">Toets</div><div class="mode-desc">Met of zonder tijd</div>
       </button>
       <button class="mode-card" data-mode="videos" onclick="selectMode(this)">
-        <div class="mode-icon">▶️</div>
-        <div class="mode-title">YouTube video's</div>
-        <div class="mode-desc">Beste uitlegvideo's</div>
+        <div class="mode-icon">▶️</div><div class="mode-title">YouTube video's</div><div class="mode-desc">Beste uitlegvideo's</div>
       </button>
     </div>
-
     <div class="toets-options hidden" id="toetsOptions">
       <div class="toets-row">
         <button class="toets-type active" data-type="zonder" onclick="selectToetsType(this)">Zonder tijdslimiet</button>
@@ -141,11 +806,7 @@
         <input type="range" id="timeSlider" min="5" max="60" step="5" value="15" oninput="updateTime(this.value)" />
       </div>
     </div>
-
-    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
-      Analyseer mijn leerstof
-    </button>
-
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">Analyseer mijn leerstof</button>
     <div class="result-area hidden" id="resultArea">
       <div class="result-header">
         <h3 id="resultTitle">Resultaat</h3>
@@ -155,21 +816,15 @@
     </div>
   </main>
 
-  <!-- PAGE: HISTORY -->
   <main class="page hidden" id="page-history">
     <div class="history-header">
       <h2>Mijn sessies</h2>
       <p>Klik op een sessie om te herhalen</p>
     </div>
     <div id="sessionList" class="session-list">
-      <div class="empty-state">
-        <div style="font-size:2rem">📂</div>
-        <p>Nog geen opgeslagen sessies</p>
-        <small>Analyseer leerstof en sla het op!</small>
-      </div>
+      <div class="empty-state"><div style="font-size:2rem">📂</div><p>Nog geen opgeslagen sessies</p><small>Analyseer leerstof en sla het op!</small></div>
     </div>
   </main>
-
 </div>
 
 <!-- MODALS -->
@@ -224,11 +879,753 @@
   </div>
 </div>
 
-<script src="app.js"></script>
 <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+/* ═══════════════════════════════════════════════════════════
+   STUDEER APP — app.js
+   ═══════════════════════════════════════════════════════════ */
+
+// ─── STATE ───────────────────────────────────────────────────
+let currentUser = null;
+let imageBase64 = null;
+let selectedMode = 'uitgebreid';
+let toetsType = 'zonder';
+let toetsMinutes = 15;
+let lastResult = null;   // { text, videos, mode, subject }
+
+let quizData = [];       // [{question, options, answer, explanation}]
+let quizIndex = 0;
+let quizAnswered = false;
+
+let flashcards = [];     // [{front, back}]
+let fcIndex = 0;
+let fcFlipped = false;
+
+let toetsData = [];      // [{question, type:'mc'|'open', options?, answer?}]
+let toetsIndex = 0;
+let toetsUserAnswers = [];
+let toetsTimerInterval = null;
+let toetsSecondsLeft = 0;
+
+// ─── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadUser();
+  setupUpload();
+  checkApiKey();
+});
+
+function loadUser() {
+  const saved = localStorage.getItem('studeer_user');
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    showApp();
   }
+}
+
+function checkApiKey() {
+  const key = localStorage.getItem('studeer_api_key');
+  const badge = document.getElementById('apiStatus');
+  if (key) {
+    badge.textContent = '✅ API';
+    badge.style.color = '#10b981';
+  } else {
+    badge.textContent = '⚙️ API sleutel nodig';
+    badge.style.color = '#f59e0b';
+  }
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────
+function getUsers() {
+  return JSON.parse(localStorage.getItem('studeer_users') || '{}');
+}
+function saveUsers(users) {
+  localStorage.setItem('studeer_users', JSON.stringify(users));
+}
+
+function register() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('regPass').value;
+  const err = document.getElementById('authError');
+
+  if (!name || !email || !pass) return showError('Vul alle velden in.');
+  if (pass.length < 6) return showError('Wachtwoord moet minstens 6 tekens zijn.');
+
+  const users = getUsers();
+  if (users[email]) return showError('Er bestaat al een account met dit e-mailadres.');
+
+  users[email] = { name, email, password: btoa(pass) };
+  saveUsers(users);
+  currentUser = { name, email };
+  localStorage.setItem('studeer_user', JSON.stringify(currentUser));
+  showApp();
+}
+
+function login() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('authError');
+
+  if (!email || !pass) return showError('Vul je e-mailadres en wachtwoord in.');
+
+  const users = getUsers();
+  const user = users[email];
+  if (!user || user.password !== btoa(pass)) return showError('Onjuist e-mailadres of wachtwoord.');
+
+  currentUser = { name: user.name, email };
+  localStorage.setItem('studeer_user', JSON.stringify(currentUser));
+  showApp();
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('studeer_user');
+  document.getElementById('appScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('active');
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('authScreen').classList.add('active');
+  toggleSidebar(false);
+}
+
+function showApp() {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('active');
+  document.getElementById('appScreen').classList.remove('hidden');
+  document.getElementById('appScreen').classList.add('active');
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarEmail').textContent = currentUser.email;
+  document.getElementById('sidebarAvatar').textContent = currentUser.name[0].toUpperCase();
+}
+
+function showError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function showLogin() {
+  document.getElementById('loginCard').classList.remove('hidden');
+  document.getElementById('registerCard').classList.add('hidden');
+  document.getElementById('authError').classList.add('hidden');
+}
+
+function showRegister() {
+  document.getElementById('loginCard').classList.add('hidden');
+  document.getElementById('registerCard').classList.remove('hidden');
+  document.getElementById('authError').classList.add('hidden');
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.add('hidden');
+    p.classList.remove('active');
+  });
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  const el = document.getElementById('page-' + page);
+  if (el) { el.classList.remove('hidden'); el.classList.add('active'); }
+
+  const btn = document.querySelector(`.nav-btn[data-page="${page}"]`);
+  if (btn) btn.classList.add('active');
+
+  const titles = { study: 'Studeren', history: 'Mijn sessies' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+
+  if (page === 'history') loadHistory();
+  toggleSidebar(false);
+}
+
+function toggleSidebar(force) {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const open = force !== undefined ? force : !sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', open);
+  overlay.classList.toggle('hidden', !open);
+}
+
+// ─── UPLOAD ───────────────────────────────────────────────────
+function setupUpload() {
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('fileInput');
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+}
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imageBase64 = ev.target.result.split(',')[1];
+    const preview = document.getElementById('previewImg');
+    preview.src = ev.target.result;
+    preview.classList.remove('hidden');
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('changePhoto').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetPhoto() {
+  imageBase64 = null;
+  document.getElementById('previewImg').classList.add('hidden');
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('changePhoto').classList.add('hidden');
+  document.getElementById('fileInput').value = '';
+}
+
+// ─── MODE SELECTION ───────────────────────────────────────────
+function selectMode(btn) {
+  document.querySelectorAll('.mode-card').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedMode = btn.dataset.mode;
+
+  const toetsOpts = document.getElementById('toetsOptions');
+  if (selectedMode === 'toets') {
+    toetsOpts.classList.remove('hidden');
+  } else {
+    toetsOpts.classList.add('hidden');
+  }
+}
+
+function selectToetsType(btn) {
+  document.querySelectorAll('.toets-type').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  toetsType = btn.dataset.type;
+  document.getElementById('timePicker').classList.toggle('hidden', toetsType !== 'met');
+}
+
+function updateTime(val) {
+  toetsMinutes = parseInt(val);
+  document.getElementById('timeLabel').textContent = val + ' min';
+}
+
+// ─── API KEY ──────────────────────────────────────────────────
+function showApiModal() {
+  const key = localStorage.getItem('studeer_api_key') || '';
+  document.getElementById('apiKeyInput').value = key;
+  document.getElementById('apiModal').classList.remove('hidden');
+}
+function closeApiModal() { document.getElementById('apiModal').classList.add('hidden'); }
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) localStorage.setItem('studeer_api_key', key);
+  closeApiModal();
+  checkApiKey();
+}
+
+// ─── AI CALL ──────────────────────────────────────────────────
+async function callClaude(prompt, imageB64 = null) {
+  const apiKey = localStorage.getItem('studeer_api_key');
+  if (!apiKey) {
+    showApiModal();
+    throw new Error('Geen API sleutel');
+  }
+
+  const content = [];
+  if (imageB64) {
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageB64 } });
+  }
+  content.push({ type: 'text', text: prompt });
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'API fout');
+  }
+
+  const data = await res.json();
+  return data.content?.map(i => i.text || '').join('') || '';
+}
+
+// ─── ANALYZE ──────────────────────────────────────────────────
+async function analyze() {
+  if (!imageBase64) {
+    alert('Upload eerst een foto van je leerstof!');
+    return;
+  }
+
+  const subject = document.getElementById('subjectInput').value.trim();
+  const vakTekst = subject ? ` voor het vak ${subject}` : '';
+
+  const resultArea = document.getElementById('resultArea');
+  const resultContent = document.getElementById('resultContent');
+  const resultTitle = document.getElementById('resultTitle');
+
+  resultArea.classList.remove('hidden');
+  resultContent.innerHTML = '<div class="loading-box"><div class="spinner"></div> Bezig met analyseren...</div>';
+
+  const modeLabels = {
+    uitgebreid: '📚 Uitgebreide uitleg',
+    efficient: '⚡ Efficiënte uitleg',
+    flashcards: '🃏 Flashcards',
+    quiz: '✏️ Quiz',
+    toets: '📝 Toets',
+    videos: '▶️ YouTube video\'s'
+  };
+  resultTitle.textContent = modeLabels[selectedMode];
+
+  const prompts = {
+    uitgebreid: `Je bent een gedetailleerde studeer-assistent. De student stuurt een foto van leerstof${vakTekst}. Lees alles zorgvuldig en leg HET VOLLEDIGE MATERIAAL heel uitgebreid en stap voor stap uit. Gebruik titels, opsommingen en voorbeelden. Schrijf in het Nederlands.`,
+
+    efficient: `Je bent een efficiënte studeer-assistent. De student stuurt een foto van leerstof${vakTekst}. Geef ALLEEN de essentie: de kernbegrippen, definities en feiten die leerkrachten typisch op een toets vragen. Gebruik bullet points, wees bondig maar volledig op de kernpunten. Schrijf in het Nederlands.`,
+
+    flashcards: `Je bent een studeer-assistent. De student stuurt een foto van leerstof${vakTekst}. 
+Herken of het gaat om: woordenschat (bijv. Frans, Engels), begrippen, of andere leerstof.
+Maak 10 to 15 flashcards in dit exacte JSON-formaat (geen uitleg erbuiten, ALLEEN JSON):
+[
+  {"front": "term of vraag", "back": "vertaling of antwoord"},
+  ...
+]
+Voor woordenschat: front = het woord in de vreemde taal, back = Nederlandse vertaling (+ eigenschappen/woordsoort als die er zijn).
+Voor begrippen: front = het begrip, back = de definitie.`,
+
+    quiz: `Je bent een studeer-assistent. De student stuurt een foto van leerstof${vakTekst}.
+Maak 8 meerkeuzevragen gebaseerd op deze leerstof. Geef ALLEEN JSON, geen tekst erbuiten:
+[
+  {
+    "question": "De vraag?",
+    "options": ["A) optie", "B) optie", "C) optie", "D) optie"],
+    "answer": "A",
+    "explanation": "Korte uitleg waarom dit juist is"
+  }
+]`,
+
+    toets: `Je bent een studeer-assistent. De student stuurt een foto van leerstof${vakTekst}.
+Maak 8 toetsvragen die leerkrachten typisch stellen. Mix meerkeuze- en open vragen. Geef ALLEEN JSON:
+[
+  {
+    "question": "De vraag?",
+    "type": "mc",
+    "options": ["A) optie", "B) optie", "C) optie", "D) optie"],
+    "answer": "A"
+  },
+  {
+    "question": "Open vraag?",
+    "type": "open",
+    "answer": "Modelantwoord"
+  }
+]`,
+
+    videos: `Je bent een studeer-assistent. De student stuurt een foto van leerstof${vakTekst}.
+Analyseer de tekst en geef:
+SAMENVATTING: [2-3 zinnen over het onderwerp]
+ZOEKTERMEN:
+- [Nederlandse zoekterm 1]
+- [English search term 1]
+- [Nederlandse zoekterm 2]
+- [English search term 2]
+- [Nederlandse zoekterm 3]
+- [English search term 3]`
+  };
+
+  try {
+    const text = await callClaude(prompts[selectedMode], imageBase64);
+
+    if (selectedMode === 'flashcards') {
+      renderFlashcardResult(text);
+    } else if (selectedMode === 'quiz') {
+      renderQuizResult(text);
+    } else if (selectedMode === 'toets') {
+      renderToetsResult(text);
+    } else if (selectedMode === 'videos') {
+      renderVideoResult(text);
+    } else {
+      resultContent.innerHTML = `<div class="result-text">${escHtml(text)}</div>`;
+    }
+
+    lastResult = { text, mode: selectedMode, subject, imageBase64 };
+
+  } catch (e) {
+    resultContent.innerHTML = `<div class="result-text" style="color:var(--red)">Fout: ${e.message}</div>`;
+  }
+}
+
+// ─── RENDER RESULTS ───────────────────────────────────────────
+function renderVideoResult(text) {
+  const el = document.getElementById('resultContent');
+  const summaryMatch = text.match(/SAMENVATTING:\s*([\s\S]*?)(?=ZOEKTERMEN:|$)/i);
+  const termsMatch = text.match(/ZOEKTERMEN:\s*([\s\S]*)/i);
+  const summary = summaryMatch ? summaryMatch[1].trim() : text;
+  const termsRaw = termsMatch ? termsMatch[1].trim() : '';
+  const terms = termsRaw.split('\n').map(t => t.replace(/^[-*•\d.]\s*/, '').trim()).filter(Boolean);
+
+  let html = `<div class="result-text" style="margin-bottom:1rem">${escHtml(summary)}</div>`;
+  html += '<div class="video-list">';
+  terms.forEach((term, i) => {
+    const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(term);
+    html += `<div class="video-item">
+      <div class="video-num">${i + 1}</div>
+      <div>
+        <div class="video-term">${escHtml(term)}</div>
+        <a class="video-link" href="${url}" target="_blank">Zoek op YouTube →</a>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderFlashcardResult(text) {
+  const el = document.getElementById('resultContent');
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    flashcards = JSON.parse(clean);
+    el.innerHTML = `<div class="result-text">✅ ${flashcards.length} flashcards aangemaakt!</div>
+      <button class="btn-primary" style="margin-top:0.75rem" onclick="startFlashcards()">🃏 Start flashcards</button>`;
+  } catch {
+    el.innerHTML = `<div class="result-text">${escHtml(text)}</div>`;
+  }
+}
+
+function renderQuizResult(text) {
+  const el = document.getElementById('resultContent');
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    quizData = JSON.parse(clean);
+    quizIndex = 0;
+    quizAnswered = false;
+    renderQuizQuestion();
+  } catch {
+    el.innerHTML = `<div class="result-text">${escHtml(text)}</div>`;
+  }
+}
+
+function renderQuizQuestion() {
+  const el = document.getElementById('resultContent');
+  if (quizIndex >= quizData.length) {
+    el.innerHTML = `<div class="quiz-score">
+      <div class="score-num">${quizData.length}/${quizData.length}</div>
+      <p>Quiz afgerond! 🎉</p>
+      <button class="quiz-next" onclick="restartQuiz()">🔄 Opnieuw</button>
+    </div>`;
+    return;
+  }
+  const q = quizData[quizIndex];
+  quizAnswered = false;
+  let html = `<div class="quiz-question">
+    <div style="font-size:0.8rem;color:var(--text3);margin-bottom:0.5rem">Vraag ${quizIndex + 1} van ${quizData.length}</div>
+    <div class="quiz-q-text">${escHtml(q.question)}</div>
+    <div class="quiz-options">`;
+  q.options.forEach((opt, i) => {
+    const letter = ['A', 'B', 'C', 'D'][i];
+    html += `<button class="quiz-option" data-letter="${letter}" onclick="answerQuiz('${letter}', this)">${escHtml(opt)}</button>`;
+  });
+  html += `</div><div class="quiz-feedback" id="quizFeedback" style="display:none"></div>`;
+  html += `<button class="quiz-next" id="quizNext" style="display:none" onclick="nextQuizQ()">Volgende vraag →</button>`;
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function answerQuiz(letter, btn) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const q = quizData[quizIndex];
+  const correct = q.answer.startsWith(letter) || q.answer === letter;
+
+  document.querySelectorAll('.quiz-option').forEach(b => {
+    b.classList.add('disabled');
+    if (b.dataset.letter === q.answer[0]) b.classList.add('correct');
+  });
+  if (!correct) btn.classList.add('wrong');
+
+  const fb = document.getElementById('quizFeedback');
+  fb.style.display = 'block';
+  fb.className = 'quiz-feedback ' + (correct ? 'correct' : 'wrong');
+  fb.textContent = correct ? '✅ Juist! ' + (q.explanation || '') : '❌ Fout. ' + (q.explanation || '');
+
+  document.getElementById('quizNext').style.display = 'block';
+}
+
+function nextQuizQ() { quizIndex++; renderQuizQuestion(); }
+function restartQuiz() { quizIndex = 0; renderQuizQuestion(); }
+
+function renderToetsResult(text) {
+  const el = document.getElementById('resultContent');
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    toetsData = JSON.parse(clean);
+    toetsUserAnswers = new Array(toetsData.length).fill(null);
+    el.innerHTML = `<div class="result-text">✅ ${toetsData.length} vragen klaar!</div>
+      <button class="btn-primary" style="margin-top:0.75rem" onclick="startToets()">📝 Start toets</button>`;
+  } catch {
+    el.innerHTML = `<div class="result-text">${escHtml(text)}</div>`;
+  }
+}
+
+// ─── FLASHCARDS ───────────────────────────────────────────────
+function startFlashcards() {
+  fcIndex = 0;
+  fcFlipped = false;
+  document.getElementById('flashcardModal').classList.remove('hidden');
+  renderFlashcard();
+}
+
+function renderFlashcard() {
+  const fc = flashcards[fcIndex];
+  document.getElementById('fcProgress').textContent = `${fcIndex + 1} / ${flashcards.length}`;
+  document.getElementById('fcFront').textContent = fc.front;
+  document.getElementById('fcBack').textContent = fc.back;
+  document.getElementById('fcFront').classList.remove('hidden');
+  document.getElementById('fcBack').classList.add('hidden');
+  fcFlipped = false;
+}
+
+function flipCard() {
+  fcFlipped = !fcFlipped;
+  document.getElementById('fcFront').classList.toggle('hidden', fcFlipped);
+  document.getElementById('fcBack').classList.toggle('hidden', !fcFlipped);
+}
+
+function nextCard() {
+  if (fcIndex < flashcards.length - 1) { fcIndex++; renderFlashcard(); }
+}
+
+function prevCard() {
+  if (fcIndex > 0) { fcIndex--; renderFlashcard(); }
+}
+
+function closeFlashcards() { document.getElementById('flashcardModal').classList.add('hidden'); }
+
+// ─── TOETS ────────────────────────────────────────────────────
+function startToets() {
+  toetsIndex = 0;
+  toetsUserAnswers = new Array(toetsData.length).fill(null);
+  document.getElementById('toetsModal').classList.remove('hidden');
+
+  if (toetsType === 'met') {
+    toetsSecondsLeft = toetsMinutes * 60;
+    document.getElementById('toetsTimer').classList.remove('hidden');
+    updateTimerDisplay();
+    toetsTimerInterval = setInterval(() => {
+      toetsSecondsLeft--;
+      updateTimerDisplay();
+      if (toetsSecondsLeft <= 60) {
+        document.getElementById('toetsTimer').classList.add('urgent');
+      }
+      if (toetsSecondsLeft <= 0) {
+        clearInterval(toetsTimerInterval);
+        finishToets();
+      }
+    }, 1000);
+  } else {
+    document.getElementById('toetsTimer').classList.add('hidden');
+  }
+
+  renderToetsVraag();
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(toetsSecondsLeft / 60).toString().padStart(2, '0');
+  const s = (toetsSecondsLeft % 60).toString().padStart(2, '0');
+  document.getElementById('toetsTimer').textContent = `⏱ ${m}:${s}`;
+}
+
+function renderToetsVraag() {
+  const q = toetsData[toetsIndex];
+  document.getElementById('toetsVraagNum').textContent = `Vraag ${toetsIndex + 1}/${toetsData.length}`;
+
+  let html = `<div style="font-weight:500;font-size:1rem;margin-bottom:0.75rem;line-height:1.5">${escHtml(q.question)}</div>`;
+
+  if (q.type === 'mc') {
+    html += q.options.map((opt, i) => {
+      const sel = toetsUserAnswers[toetsIndex] === opt ? ' selected' : '';
+      return `<button class="toets-mc-option${sel}" onclick="selectToetsMC(this, '${escAttr(opt)}')">${escHtml(opt)}</button>`;
+    }).join('');
+  } else {
+    const val = toetsUserAnswers[toetsIndex] || '';
+    html += `<textarea class="toets-answer" placeholder="Schrijf jouw antwoord hier..." onchange="saveOpenAnswer(this.value)">${escHtml(val)}</textarea>`;
+  }
+
+  document.getElementById('toetsContent').innerHTML = html;
+
+  document.querySelector('.toets-nav .btn-secondary').style.display = toetsIndex === 0 ? 'none' : '';
+  const nextBtn = document.querySelector('.toets-nav .btn-primary');
+  nextBtn.textContent = toetsIndex === toetsData.length - 1 ? 'Afronden ✓' : 'Volgende →';
+}
+
+function selectToetsMC(btn, val) {
+  document.querySelectorAll('.toets-mc-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  toetsUserAnswers[toetsIndex] = val;
+}
+
+function saveOpenAnswer(val) {
+  toetsUserAnswers[toetsIndex] = val;
+}
+
+function prevToetsVraag() {
+  if (toetsIndex > 0) { toetsIndex--; renderToetsVraag(); }
+}
+
+function nextToetsVraag() {
+  if (toetsIndex < toetsData.length - 1) {
+    toetsIndex++;
+    renderToetsVraag();
+  } else {
+    finishToets();
+  }
+}
+
+function finishToets() {
+  clearInterval(toetsTimerInterval);
+  let correct = 0;
+  toetsData.forEach((q, i) => {
+    if (q.type === 'mc') {
+      const userLetter = (toetsUserAnswers[i] || '').charAt(0);
+      if (userLetter === q.answer) correct++;
+    }
+  });
+  const mcCount = toetsData.filter(q => q.type === 'mc').length;
+  const openCount = toetsData.filter(q => q.type === 'open').length;
+
+  let html = `<div class="toets-results">
+    <div class="big-score">${correct}/${mcCount}</div>
+    <p style="color:var(--text2);margin-bottom:1rem">meerkeuze correct${openCount > 0 ? ` · ${openCount} open vragen bekijk je zelf` : ''}</p>
+    <div style="text-align:left">`;
+
+  toetsData.forEach((q, i) => {
+    const userAns = toetsUserAnswers[i] || '(geen antwoord)';
+    let icon = '—';
+    if (q.type === 'mc') {
+      icon = (userAns.charAt(0) === q.answer) ? '✅' : '❌';
+    } else {
+      icon = '📝';
+    }
+    html += `<div style="border-bottom:1px solid var(--border);padding:0.6rem 0">
+      <div style="font-size:0.85rem;font-weight:500">${icon} ${escHtml(q.question)}</div>
+      ${q.type === 'mc' ? `<div style="font-size:0.78rem;color:var(--text3);margin-top:2px">Jouw antwoord: ${escHtml(userAns)} · Juist: ${escHtml(q.answer)}</div>` : `<div style="font-size:0.78rem;color:var(--text3);margin-top:2px">Jouw antwoord: ${escHtml(userAns)}</div><div style="font-size:0.78rem;color:var(--accent3);margin-top:2px">Modelantwoord: ${escHtml(q.answer || '')}</div>`}
+    </div>`;
+  });
+
+  html += `</div></div>`;
+  document.getElementById('toetsContent').innerHTML = html;
+  document.querySelector('.toets-nav').style.display = 'none';
+  document.getElementById('toetsVraagNum').textContent = 'Resultaten';
+}
+
+function closeToets() {
+  clearInterval(toetsTimerInterval);
+  document.getElementById('toetsModal').classList.add('hidden');
+  document.querySelector('.toets-nav').style.display = '';
+}
+
+// ─── SAVE SESSION ─────────────────────────────────────────────
+function saveSession() {
+  if (!lastResult || !currentUser) return;
+
+  const key = 'studeer_sessions_' + currentUser.email;
+  const sessions = JSON.parse(localStorage.getItem(key) || '[]');
+
+  const session = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }),
+    mode: lastResult.mode,
+    subject: lastResult.subject || 'Geen vak',
+    text: lastResult.text,
+    imageBase64: lastResult.imageBase64
+  };
+
+  sessions.unshift(session);
+  if (sessions.length > 50) sessions.splice(50);
+  localStorage.setItem(key, JSON.stringify(sessions));
+
+  document.querySelector('.save-btn').textContent = '✅ Opgeslagen!';
+  setTimeout(() => { document.querySelector('.save-btn').textContent = '💾 Opslaan'; }, 2000);
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────
+function loadHistory() {
+  if (!currentUser) return;
+  const key = 'studeer_sessions_' + currentUser.email;
+  const sessions = JSON.parse(localStorage.getItem(key) || '[]');
+  const list = document.getElementById('sessionList');
+
+  if (!sessions.length) {
+    list.innerHTML = `<div class="empty-state"><div>📂</div><p>Nog geen opgeslagen sessies</p><small>Analyseer leerstof en sla het op!</small></div>`;
+    return;
+  }
+
+  const modeLabels = {
+    uitgebreid: '📚 Uitgebreid',
+    efficient: '⚡ Efficiënt',
+    flashcards: '🃏 Flashcards',
+    quiz: '✏️ Quiz',
+    toets: '📝 Toets',
+    videos: '▶️ Video\'s'
+  };
+
+  list.innerHTML = sessions.map(s => `
+    <div class="session-card" onclick="openSession(${s.id})">
+      ${s.imageBase64
+        ? `<img class="session-thumb" src="data:image/jpeg;base64,${s.imageBase64}" alt="" />`
+        : `<div class="session-thumb-placeholder">📖</div>`}
+      <div class="session-info">
+        <div class="session-title">${escHtml(s.subject)}</div>
+        <div class="session-meta">${s.date}</div>
+      </div>
+      <div class="session-mode-badge">${modeLabels[s.mode] || s.mode}</div>
+    </div>
+  `).join('');
+}
+
+function openSession(id) {
+  if (!currentUser) return;
+  const key = 'studeer_sessions_' + currentUser.email;
+  const sessions = JSON.parse(localStorage.getItem(key) || '[]');
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+
+  const modeLabels = {
+    uitgebreid: '📚 Uitgebreide uitleg',
+    efficient: '⚡ Efficiënte uitleg',
+    flashcards: '🃏 Flashcards',
+    quiz: '✏️ Quiz',
+    toets: '📝 Toets',
+    videos: '▶️ YouTube video\'s'
+  };
+
+  let html = `
+    <h3 style="font-family:var(--font-display);font-size:1.3rem;margin-bottom:0.25rem">${escHtml(s.subject)}</h3>
+    <p style="color:var(--text3);font-size:0.82rem;margin-bottom:1rem">${s.date} · ${modeLabels[s.mode] || s.mode}</p>
+    ${s.imageBase64 ? `<img class="session-detail-img" src="data:image/jpeg;base64,${s.imageBase64}" alt="Foto van leerstof" />` : ''}
+    <div class="session-detail-content">${escHtml(s.text)}</div>
+  `;
+
+  document.getElementById('sessionDetail').innerHTML = html;
+  document.getElementById('sessionModal').classList.remove('hidden');
+}
+
+function closeSessionModal() { document.getElementById('sessionModal').classList.add('hidden'); }
+
+// ─── UTILS ────────────────────────────────────────────────────
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return (str || '').replace(/'/g, "\\'");
+}
 </script>
 </body>
 </html>
