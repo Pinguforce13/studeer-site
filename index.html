@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudeerApp</title>
+  <meta name="description" content="Jouw persoonlijke AI studeer-assistent" />
+  <meta name="theme-color" content="#1a0533" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="screen active">
+  <div class="auth-bg"></div>
+  <div class="auth-content">
+    <div class="logo-big">📖</div>
+    <h1 class="brand">StudeerApp</h1>
+    <p class="brand-sub">Jouw slimme AI studeer-assistent</p>
+    <div class="auth-card" id="loginCard">
+      <h2>Inloggen</h2>
+      <input type="email" id="loginEmail" placeholder="E-mailadres" />
+      <input type="password" id="loginPass" placeholder="Wachtwoord" />
+      <button class="btn-primary" onclick="login()">Inloggen</button>
+      <p class="switch-auth">Nog geen account? <a onclick="showRegister()">Registreer hier</a></p>
+    </div>
+    <div class="auth-card hidden" id="registerCard">
+      <h2>Account aanmaken</h2>
+      <input type="text" id="regName" placeholder="Jouw naam" />
+      <input type="email" id="regEmail" placeholder="E-mailadres" />
+      <input type="password" id="regPass" placeholder="Wachtwoord (min. 6 tekens)" />
+      <button class="btn-primary" onclick="register()">Account aanmaken</button>
+      <p class="switch-auth">Al een account? <a onclick="showLogin()">Log in</a></p>
+    </div>
+    <div id="authError" class="auth-error hidden"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" class="screen hidden">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-small">📖</span>
+      <span class="app-name">StudeerApp</span>
+      <button class="close-sidebar" onclick="toggleSidebar()">✕</button>
+    </div>
+    <div class="user-badge">
+      <div class="avatar" id="sidebarAvatar">S</div>
+      <div>
+        <div class="user-name" id="sidebarName">Student</div>
+        <div class="user-email" id="sidebarEmail"></div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <button class="nav-btn active" onclick="goTo('study')" data-page="study">
+        <span>🧠</span> Studeren
+      </button>
+      <button class="nav-btn" onclick="goTo('history')" data-page="history">
+        <span>📂</span> Mijn sessies
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <button class="nav-btn logout" onclick="logout()">
+        <span>🚪</span> Uitloggen
+      </button>
+    </div>
+  </nav>
+  <div class="overlay hidden" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    <span class="page-title" id="pageTitle">Studeren</span>
+    <div class="api-badge" id="apiStatus" onclick="showApiModal()">⚙️ API</div>
+  </header>
+
+  <!-- PAGE: STUDY -->
+  <main class="page active" id="page-study">
+    <div class="upload-section">
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">📷</div>
+        <p><strong>Klik of sleep een foto</strong></p>
+        <p class="sub">van je boek, cursus of notities</p>
+        <input type="file" id="fileInput" accept="image/*" />
+      </div>
+      <img id="previewImg" class="preview-img hidden" alt="preview" />
+      <button class="change-photo hidden" id="changePhoto" onclick="resetPhoto()">📷 Andere foto</button>
+    </div>
+
+    <div class="subject-row">
+      <input type="text" id="subjectInput" placeholder="Vak (bijv. Biologie, Frans, Wiskunde...)" />
+    </div>
+
+    <div class="mode-grid">
+      <button class="mode-card active" data-mode="uitgebreid" onclick="selectMode(this)">
+        <div class="mode-icon">📚</div>
+        <div class="mode-title">Uitgebreide uitleg</div>
+        <div class="mode-desc">Alles stap voor stap</div>
+      </button>
+      <button class="mode-card" data-mode="efficient" onclick="selectMode(this)">
+        <div class="mode-icon">⚡</div>
+        <div class="mode-title">Efficiënte uitleg</div>
+        <div class="mode-desc">Enkel het essentiële</div>
+      </button>
+      <button class="mode-card" data-mode="flashcards" onclick="selectMode(this)">
+        <div class="mode-icon">🃏</div>
+        <div class="mode-title">Flashcards</div>
+        <div class="mode-desc">Woordenschat & begrippen</div>
+      </button>
+      <button class="mode-card" data-mode="quiz" onclick="selectMode(this)">
+        <div class="mode-icon">✏️</div>
+        <div class="mode-title">Quiz</div>
+        <div class="mode-desc">Oefen voor je toets</div>
+      </button>
+      <button class="mode-card" data-mode="toets" onclick="selectMode(this)">
+        <div class="mode-icon">📝</div>
+        <div class="mode-title">Toets</div>
+        <div class="mode-desc">Met of zonder tijd</div>
+      </button>
+      <button class="mode-card" data-mode="videos" onclick="selectMode(this)">
+        <div class="mode-icon">▶️</div>
+        <div class="mode-title">YouTube video's</div>
+        <div class="mode-desc">Beste uitlegvideo's</div>
+      </button>
+    </div>
+
+    <div class="toets-options hidden" id="toetsOptions">
+      <div class="toets-row">
+        <button class="toets-type active" data-type="zonder" onclick="selectToetsType(this)">Zonder tijdslimiet</button>
+        <button class="toets-type" data-type="met" onclick="selectToetsType(this)">Met tijdslimiet</button>
+      </div>
+      <div class="time-picker hidden" id="timePicker">
+        <label>Tijd: <strong id="timeLabel">15 min</strong></label>
+        <input type="range" id="timeSlider" min="5" max="60" step="5" value="15" oninput="updateTime(this.value)" />
+      </div>
+    </div>
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+      Analyseer mijn leerstof
+    </button>
+
+    <div class="result-area hidden" id="resultArea">
+      <div class="result-header">
+        <h3 id="resultTitle">Resultaat</h3>
+        <button class="save-btn" onclick="saveSession()">💾 Opslaan</button>
+      </div>
+      <div id="resultContent"></div>
+    </div>
+  </main>
+
+  <!-- PAGE: HISTORY -->
+  <main class="page hidden" id="page-history">
+    <div class="history-header">
+      <h2>Mijn sessies</h2>
+      <p>Klik op een sessie om te herhalen</p>
+    </div>
+    <div id="sessionList" class="session-list">
+      <div class="empty-state">
+        <div style="font-size:2rem">📂</div>
+        <p>Nog geen opgeslagen sessies</p>
+        <small>Analyseer leerstof en sla het op!</small>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay hidden" id="apiModal">
+  <div class="modal">
+    <h3>Anthropic API sleutel</h3>
+    <p>Voer jouw API sleutel in. Die wordt lokaal opgeslagen en nergens naartoe gestuurd.</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+    <div class="modal-buttons">
+      <button class="btn-secondary" onclick="closeApiModal()">Annuleren</button>
+      <button class="btn-primary" onclick="saveApiKey()">Opslaan</button>
+    </div>
+    <p class="api-link">Sleutel aanmaken op <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="flashcardModal">
+  <div class="modal flashcard-modal">
+    <div class="fc-progress" id="fcProgress">1 / 10</div>
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="fc-front" id="fcFront">Klik om te beginnen</div>
+      <div class="fc-back hidden" id="fcBack"></div>
+    </div>
+    <div class="fc-buttons">
+      <button class="btn-secondary" onclick="prevCard()">← Vorige</button>
+      <button class="btn-flip" onclick="flipCard()">Omdraaien</button>
+      <button class="btn-secondary" onclick="nextCard()">Volgende →</button>
+    </div>
+    <button class="close-modal" onclick="closeFlashcards()">✕ Sluiten</button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="toetsModal">
+  <div class="modal toets-modal">
+    <div class="toets-topbar">
+      <span id="toetsVraagNum">Vraag 1/8</span>
+      <span class="timer hidden" id="toetsTimer">⏱ 15:00</span>
+    </div>
+    <div id="toetsContent"></div>
+    <div class="toets-nav">
+      <button class="btn-secondary" onclick="prevToetsVraag()">← Vorige</button>
+      <button class="btn-primary" onclick="nextToetsVraag()">Volgende →</button>
+    </div>
+    <button class="close-modal" onclick="closeToets()">✕ Stoppen</button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="sessionModal">
+  <div class="modal session-modal">
+    <button class="close-modal" onclick="closeSessionModal()">✕ Sluiten</button>
+    <div id="sessionDetail"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>
