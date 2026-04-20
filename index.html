@@ -704,7 +704,6 @@ body {
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
 <div id="authScreen" class="screen active">
   <div class="auth-bg"></div>
   <div class="auth-content">
@@ -730,7 +729,6 @@ body {
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="appScreen" class="screen hidden">
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -759,7 +757,6 @@ body {
   <header class="topbar">
     <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     <span class="page-title" id="pageTitle">Studeren</span>
-    <div class="api-badge" id="apiStatus" onclick="showApiModal()">⚙️ API</div>
   </header>
 
   <main class="page active" id="page-study">
@@ -806,7 +803,7 @@ body {
         <input type="range" id="timeSlider" min="5" max="60" step="5" value="15" oninput="updateTime(this.value)" />
       </div>
     </div>
-    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">Analyseer mijn leerstof</button>
+    <button class="analyze-btn" onclick="analyze()">Analyseer mijn leerstof</button>
     <div class="result-area hidden" id="resultArea">
       <div class="result-header">
         <h3 id="resultTitle">Resultaat</h3>
@@ -828,23 +825,10 @@ body {
 </div>
 
 <!-- MODALS -->
-<div class="modal-overlay hidden" id="apiModal">
-  <div class="modal">
-    <h3>Anthropic API sleutel</h3>
-    <p>Voer jouw API sleutel in. Die wordt lokaal opgeslagen en nergens naartoe gestuurd.</p>
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
-    <div class="modal-buttons">
-      <button class="btn-secondary" onclick="closeApiModal()">Annuleren</button>
-      <button class="btn-primary" onclick="saveApiKey()">Opslaan</button>
-    </div>
-    <p class="api-link">Sleutel aanmaken op <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
-  </div>
-</div>
-
 <div class="modal-overlay hidden" id="flashcardModal">
   <div class="modal flashcard-modal">
     <div class="fc-progress" id="fcProgress">1 / 10</div>
-    <div class="flashcard" id="flashcard" onclick="flipCard()">
+    <div class="flashcard" onclick="flipCard()">
       <div class="fc-front" id="fcFront">Klik om te beginnen</div>
       <div class="fc-back hidden" id="fcBack"></div>
     </div>
@@ -1123,7 +1107,6 @@ function saveApiKey() {
 
 // ─── AI CALL ──────────────────────────────────────────────────
 async function callClaude(prompt, imageB64 = null) {
-  const apiKey = localStorage.getItem('studeer_api_key');
   if (!apiKey) {
     showApiModal();
     throw new Error('Geen API sleutel');
@@ -1135,13 +1118,10 @@ async function callClaude(prompt, imageB64 = null) {
   }
   content.push({ type: 'text', text: prompt });
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -1626,6 +1606,4 @@ function escHtml(str) {
 function escAttr(str) {
   return (str || '').replace(/'/g, "\\'");
 }
-</script>
-</body>
-</html>
+</script></body></html>
