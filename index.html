@@ -1106,17 +1106,17 @@ function saveApiKey() {
 
 // ─── AI CALL ──────────────────────────────────────────────────
 async function callClaude(prompt, imageB64 = null) {
-  const content = [];
-  if (imageB64) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageB64 } });
-  content.push({ type: 'text', text: prompt });
+  const parts = [];
+  if (imageB64) parts.push({ inlineData: { mimeType: 'image/jpeg', data: imageB64 } });
+  parts.push({ text: prompt });
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{ role: 'user', content }] })
+    body: JSON.stringify({ parts })
   });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.error?.message || 'API fout'); }
+  if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'API fout'); }
   const data = await res.json();
-  return data.content?.map(i => i.text || '').join('') || '';
+  return data.text || '';
 }
 
 // ─── ANALYZE ──────────────────────────────────────────────────
